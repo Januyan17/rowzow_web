@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ps5_station.dart';
@@ -75,7 +76,9 @@ class TvRepository {
           table: 'session_service_lines',
           callback: emit,
         )
-        .subscribe();
+        .subscribe((status, error) {
+          debugPrint('[tv-board-changes] $status${error != null ? ' — $error' : ''}');
+        });
 
     controller.onCancel = () => _client.removeChannel(channel);
 

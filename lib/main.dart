@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/app_config.dart';
 import 'pages/tv_board_page.dart';
+import 'theme/app_colors.dart';
 
 Future<void> main() async {
   await Supabase.initialize(
@@ -25,11 +26,11 @@ class RowzowApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
+          seedColor: AppColors.ps5,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0E0E11),
+        scaffoldBackgroundColor: const Color(0xFF0A0E1A),
       ),
       home: const TvBoardPage(),
     );

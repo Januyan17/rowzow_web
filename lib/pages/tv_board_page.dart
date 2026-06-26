@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../data/tv_repository.dart';
 import '../state/tv_board_controller.dart';
+import '../theme/app_colors.dart';
+import '../widgets/live_pulse_dot.dart';
 import '../widgets/session_card.dart';
 
 class TvBoardPage extends StatefulWidget {
@@ -45,17 +47,19 @@ class _TvBoardPageState extends State<TvBoardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E11),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Header(sessionCount: _controller.sessions.length),
-              const SizedBox(height: 24),
-              Expanded(child: _buildBody()),
-            ],
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppColors.background),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 22, 28, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Header(sessionCount: _controller.sessions.length),
+                const SizedBox(height: 26),
+                Expanded(child: _buildBody()),
+              ],
+            ),
           ),
         ),
       ),
@@ -64,40 +68,38 @@ class _TvBoardPageState extends State<TvBoardPage> {
 
   Widget _buildBody() {
     if (_controller.loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white70),
+      return const _StatusMessage(
+        icon: Icons.sports_esports_outlined,
+        title: 'Loading the board…',
+        subtitle: 'Fetching live sessions from Rowzow',
+        showSpinner: true,
       );
     }
     if (_controller.error != null) {
-      return const Center(
-        child: Text(
-          'Unable to load live sessions.',
-          style: TextStyle(color: Colors.white70, fontSize: 20),
-        ),
+      return const _StatusMessage(
+        icon: Icons.wifi_off_rounded,
+        title: 'Unable to load live sessions',
+        subtitle: 'Reconnecting automatically…',
+        iconColor: AppColors.overtime,
       );
     }
     if (_controller.sessions.isEmpty) {
-      return const Center(
-        child: Text(
-          'No active sessions',
-          style: TextStyle(
-            color: Colors.white54,
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      return const _StatusMessage(
+        icon: Icons.movie_filter_outlined,
+        title: 'No active sessions',
+        subtitle: 'New sessions will appear here automatically',
       );
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = (constraints.maxWidth / 360).floor().clamp(1, 6);
+        final columns = (constraints.maxWidth / 380).floor().clamp(1, 6);
         return GridView.builder(
           itemCount: _controller.sessions.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            mainAxisExtent: 220,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
+            mainAxisExtent: 230,
+            crossAxisSpacing: 22,
+            mainAxisSpacing: 22,
           ),
           itemBuilder: (context, index) => SessionCard(
             session: _controller.sessions[index],
@@ -105,6 +107,64 @@ class _TvBoardPageState extends State<TvBoardPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _StatusMessage extends StatelessWidget {
+  const _StatusMessage({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.iconColor = Colors.white38,
+    this.showSpinner = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color iconColor;
+  final bool showSpinner;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: iconColor.withValues(alpha: 0.08),
+            ),
+            child: showSpinner
+                ? const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(
+                      color: AppColors.ps5,
+                      strokeWidth: 3,
+                    ),
+                  )
+                : Icon(icon, size: 40, color: iconColor),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.white38, fontSize: 15),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -143,29 +203,85 @@ class _HeaderState extends State<_Header> {
         '${_now.hour.toString().padLeft(2, '0')}:'
         '${_now.minute.toString().padLeft(2, '0')}:'
         '${_now.second.toString().padLeft(2, '0')}';
+    final date =
+        '${_now.year}-${_now.month.toString().padLeft(2, '0')}-'
+        '${_now.day.toString().padLeft(2, '0')}';
+
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.ps5, AppColors.vr],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.ps5.withValues(alpha: 0.4),
+                blurRadius: 16,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.sports_esports,
+            color: Colors.white,
+            size: 26,
+          ),
+        ),
+        const SizedBox(width: 14),
         Text(
           AppConfig.appName,
           style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
             color: Colors.white,
+            letterSpacing: 0.2,
           ),
         ),
-        const SizedBox(width: 16),
-        Text(
-          '${widget.sessionCount} active',
-          style: const TextStyle(fontSize: 16, color: Colors.white54),
+        const SizedBox(width: 18),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.live.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.live.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const LivePulseDot(),
+              const SizedBox(width: 8),
+              Text(
+                '${widget.sessionCount} active',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.live,
+                ),
+              ),
+            ],
+          ),
         ),
         const Spacer(),
-        Text(
-          time,
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              time,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+            Text(
+              date,
+              style: const TextStyle(fontSize: 13, color: Colors.white38),
+            ),
+          ],
         ),
       ],
     );

@@ -16,7 +16,7 @@ class TvBoardController extends ChangeNotifier {
   bool loading = true;
   Object? error;
 
-  static const _pollInterval = Duration(seconds: 30);
+  static const _pollInterval = Duration(seconds: 10);
 
   StreamSubscription<void>? _changesSub;
   Timer? _debounce;

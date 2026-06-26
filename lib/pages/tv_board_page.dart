@@ -8,7 +8,9 @@ import '../data/tv_repository.dart';
 import '../state/tv_board_controller.dart';
 import '../theme/app_colors.dart';
 import '../widgets/live_pulse_dot.dart';
+import '../widgets/popular_games_banner.dart';
 import '../widgets/session_card.dart';
+import '../widgets/terms_footer.dart';
 
 class TvBoardPage extends StatefulWidget {
   const TvBoardPage({super.key, TvBoardController? controller})
@@ -56,8 +58,11 @@ class _TvBoardPageState extends State<TvBoardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Header(sessionCount: _controller.sessions.length),
-                const SizedBox(height: 26),
+                const SizedBox(height: 18),
+                const PopularGamesBanner(),
+                const SizedBox(height: 22),
                 Expanded(child: _buildBody()),
+                const TermsFooter(),
               ],
             ),
           ),
@@ -207,83 +212,100 @@ class _HeaderState extends State<_Header> {
         '${_now.year}-${_now.month.toString().padLeft(2, '0')}-'
         '${_now.day.toString().padLeft(2, '0')}';
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.ps5, AppColors.vr],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.ps5.withValues(alpha: 0.4),
-                blurRadius: 16,
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.sports_esports,
-            color: Colors.white,
-            size: 26,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Text(
-          AppConfig.appName,
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            letterSpacing: 0.2,
-          ),
-        ),
-        const SizedBox(width: 18),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.live.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.live.withValues(alpha: 0.4)),
-          ),
-          child: Row(
+    return SizedBox(
+      height: 56,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Centered logo + title, regardless of how wide the left/right
+          // content below ends up being.
+          Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const LivePulseDot(),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.ps5, AppColors.vr],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.ps5.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.sports_esports,
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 14),
               Text(
-                '${widget.sessionCount} active',
+                AppConfig.appName,
                 style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.live,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
           ),
-        ),
-        const Spacer(),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              time,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontFeatures: [FontFeature.tabularFigures()],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.live.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.live.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const LivePulseDot(),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${widget.sessionCount} active',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.live,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              date,
-              style: const TextStyle(fontSize: 13, color: Colors.white38),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  time,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+                Text(
+                  date,
+                  style: const TextStyle(fontSize: 12, color: Colors.white38),
+                ),
+              ],
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

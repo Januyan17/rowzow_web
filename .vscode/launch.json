@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Rowzow (dev)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": ["--dart-define-from-file=env/dev.json"]
+    },
+    {
+      "name": "Rowzow (qa)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": ["--dart-define-from-file=env/qa.json"]
+    },
+    {
+      "name": "Rowzow (prod)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": ["--dart-define-from-file=env/prod.json"]
+    }
+  ]
+}

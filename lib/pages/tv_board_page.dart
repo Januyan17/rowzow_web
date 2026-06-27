@@ -119,7 +119,7 @@ class _TvBoardPageState extends State<TvBoardPage> {
           itemCount: _controller.sessions.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            mainAxisExtent: isMobile ? 250 : 230,
+            mainAxisExtent: isMobile ? 270 : 250,
             crossAxisSpacing: spacing,
             mainAxisSpacing: spacing,
           ),
@@ -212,10 +212,12 @@ class _HeaderState extends State<_Header> {
 
   @override
   Widget build(BuildContext context) {
+    final hour12 = _now.hour % 12 == 0 ? 12 : _now.hour % 12;
+    final period = _now.hour < 12 ? 'AM' : 'PM';
     final time =
-        '${_now.hour.toString().padLeft(2, '0')}:'
+        '$hour12:'
         '${_now.minute.toString().padLeft(2, '0')}:'
-        '${_now.second.toString().padLeft(2, '0')}';
+        '${_now.second.toString().padLeft(2, '0')} $period';
     final date =
         '${_now.year}-${_now.month.toString().padLeft(2, '0')}-'
         '${_now.day.toString().padLeft(2, '0')}';
@@ -284,7 +286,7 @@ class _HeaderState extends State<_Header> {
         Text(
           time,
           style: TextStyle(
-            fontSize: widget.compact ? 20 : 26,
+            fontSize: widget.compact ? 17 : 26,
             fontWeight: FontWeight.bold,
             color: Colors.white,
             fontFeatures: const [FontFeature.tabularFigures()],

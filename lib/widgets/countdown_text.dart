@@ -60,29 +60,46 @@ class _CountdownTextState extends State<CountdownText> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            _timeBlock(Icons.timer_outlined, 'Elapsed', _format(elapsed), Colors.white),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.timer_outlined,
+                label: 'ELAPSED',
+                value: _format(elapsed),
+                valueColor: Colors.white,
+                accentColor: Colors.white,
+              ),
+            ),
             if (remaining != null) ...[
-              const SizedBox(width: 14),
-              isOvertime
-                  ? _overtimeBadge(_format(remaining.abs()))
-                  : _timeBlock(
-                      Icons.hourglass_bottom,
-                      'Remaining',
-                      _format(remaining),
-                      urgencyColor,
-                    ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: isOvertime
+                    ? _StatTile(
+                        icon: Icons.warning_rounded,
+                        label: 'OVERTIME',
+                        value: '+${_format(remaining.abs())}',
+                        valueColor: AppColors.overtime,
+                        accentColor: AppColors.overtime,
+                        highlighted: true,
+                      )
+                    : _StatTile(
+                        icon: Icons.hourglass_bottom,
+                        label: 'REMAINING',
+                        value: _format(remaining),
+                        valueColor: urgencyColor,
+                        accentColor: urgencyColor,
+                      ),
+              ),
             ],
           ],
         ),
         if (progress != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: SizedBox(
               height: 6,
-              width: 160,
+              width: double.infinity,
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.white.withValues(alpha: 0.08),
@@ -105,69 +122,74 @@ class _CountdownTextState extends State<CountdownText> {
 
   static String _format(Duration d) {
     final h = d.inHours;
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final m = d.inMinutes.remainder(60);
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return h > 0 ? '$h:$m:$s' : '$m:$s';
+    if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}m ${s}s';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
   }
+}
 
-  Widget _timeBlock(IconData icon, String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 13, color: Colors.white54),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.white54,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: color,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
-    );
-  }
+/// A labelled time readout (elapsed/remaining/overtime), styled as a small
+/// filled tile so the stats read as distinct "cards" instead of bare text
+/// floating in empty space.
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    required this.accentColor,
+    this.highlighted = false,
+  });
 
-  Widget _overtimeBadge(String overBy) {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color valueColor;
+  final Color accentColor;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: AppColors.overtime.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.overtime, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.overtime.withValues(alpha: 0.35),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
+        color: accentColor.withValues(alpha: highlighted ? 0.14 : 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: highlighted
+            ? Border.all(color: accentColor.withValues(alpha: 0.5))
+            : null,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.warning_rounded, size: 16, color: AppColors.overtime),
-          const SizedBox(width: 6),
+          Row(
+            children: [
+              Icon(icon, size: 12, color: Colors.white54),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white54,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
           Text(
-            'OVERTIME +$overBy',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.overtime,
-              letterSpacing: 0.3,
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+              color: valueColor,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],

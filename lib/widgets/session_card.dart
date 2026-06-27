@@ -91,11 +91,11 @@ class SessionCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
                       for (final line in lines) ...[
                         _LineSection(line: line, ps5Stations: ps5Stations),
                         if (line != lines.last) const Divider(
-                          height: 20,
+                          height: 24,
                           color: AppColors.cardBorder,
                         ),
                       ],
@@ -135,16 +135,26 @@ class _LineSection extends StatelessWidget {
             Expanded(
               child: Wrap(
                 spacing: 6,
-                runSpacing: 4,
-                children: _detailChips(),
+                runSpacing: 6,
+                children: [
+                  ..._detailChips(),
+                  _chip(Icons.schedule_outlined, 'Started ${_formatStart(line.startTime)}'),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         CountdownText(line: line),
       ],
     );
+  }
+
+  String _formatStart(DateTime time) {
+    final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.hour < 12 ? 'AM' : 'PM';
+    return '$hour12:$minute $period';
   }
 
   List<Widget> _detailChips() {

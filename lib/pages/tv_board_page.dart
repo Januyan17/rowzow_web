@@ -52,19 +52,39 @@ class _TvBoardPageState extends State<TvBoardPage> {
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.background),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(28, 22, 28, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Header(sessionCount: _controller.sessions.length),
-                const SizedBox(height: 18),
-                const PopularGamesBanner(),
-                const SizedBox(height: 22),
-                Expanded(child: _buildBody()),
-                const TermsFooter(),
-              ],
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final isMobile = width < 600;
+              final isTablet = width >= 600 && width < 1024;
+              final horizontalPadding = isMobile ? 14.0 : (isTablet ? 20.0 : 28.0);
+              final topPadding = isMobile ? 14.0 : (isTablet ? 18.0 : 22.0);
+              final bottomPadding = isMobile ? 16.0 : (isTablet ? 22.0 : 28.0);
+              final sectionGap = isMobile ? 12.0 : (isTablet ? 16.0 : 18.0);
+              final bodyGap = isMobile ? 14.0 : (isTablet ? 18.0 : 22.0);
+              return Padding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  topPadding,
+                  horizontalPadding,
+                  bottomPadding,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Header(
+                      sessionCount: _controller.sessions.length,
+                      compact: width < 700,
+                    ),
+                    SizedBox(height: sectionGap),
+                    const PopularGamesBanner(),
+                    SizedBox(height: bodyGap),
+                    Expanded(child: _buildBody()),
+                    const TermsFooter(),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -97,14 +117,16 @@ class _TvBoardPageState extends State<TvBoardPage> {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
         final columns = (constraints.maxWidth / 380).floor().clamp(1, 6);
+        final spacing = isMobile ? 14.0 : 22.0;
         return GridView.builder(
           itemCount: _controller.sessions.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            mainAxisExtent: 230,
-            crossAxisSpacing: 22,
-            mainAxisSpacing: 22,
+            mainAxisExtent: isMobile ? 250 : 230,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
           ),
           itemBuilder: (context, index) => SessionCard(
             session: _controller.sessions[index],
@@ -175,9 +197,10 @@ class _StatusMessage extends StatelessWidget {
 }
 
 class _Header extends StatefulWidget {
-  const _Header({required this.sessionCount});
+  const _Header({required this.sessionCount, this.compact = false});
 
   final int sessionCount;
+  final bool compact;
 
   @override
   State<_Header> createState() => _HeaderState();
@@ -212,100 +235,122 @@ class _HeaderState extends State<_Header> {
         '${_now.year}-${_now.month.toString().padLeft(2, '0')}-'
         '${_now.day.toString().padLeft(2, '0')}';
 
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Centered logo + title, regardless of how wide the left/right
-          // content below ends up being.
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.ps5, AppColors.vr],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.ps5.withValues(alpha: 0.4),
-                      blurRadius: 16,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.sports_esports,
-                  color: Colors.white,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Text(
-                AppConfig.appName,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
+    final logo = Container(
+      padding: EdgeInsets.all(widget.compact ? 8 : 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.ps5, AppColors.vr],
+        ),
+        borderRadius: BorderRadius.circular(widget.compact ? 12 : 14),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ps5.withValues(alpha: 0.4),
+            blurRadius: 16,
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.live.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.live.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const LivePulseDot(),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${widget.sessionCount} active',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.live,
-                    ),
-                  ),
-                ],
-              ),
+        ],
+      ),
+      child: Icon(
+        Icons.sports_esports,
+        color: Colors.white,
+        size: widget.compact ? 20 : 26,
+      ),
+    );
+
+    final titleRow = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        logo,
+        SizedBox(width: widget.compact ? 10 : 14),
+        Flexible(
+          child: Text(
+            AppConfig.appName,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: widget.compact ? 20 : 26,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 0.2,
             ),
           ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
-                ),
-                Text(
-                  date,
-                  style: const TextStyle(fontSize: 12, color: Colors.white38),
-                ),
-              ],
+        ),
+      ],
+    );
+
+    final liveBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.live.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.live.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const LivePulseDot(),
+          const SizedBox(width: 8),
+          Text(
+            '${widget.sessionCount} active',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.live,
             ),
           ),
         ],
       ),
+    );
+
+    final timeBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          time,
+          style: TextStyle(
+            fontSize: widget.compact ? 20 : 26,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        Text(
+          date,
+          style: const TextStyle(fontSize: 12, color: Colors.white38),
+        ),
+      ],
+    );
+
+    if (!widget.compact) {
+      return SizedBox(
+        height: 56,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Centered logo + title, regardless of how wide the left/right
+            // content below ends up being.
+            titleRow,
+            Align(alignment: Alignment.centerLeft, child: liveBadge),
+            Align(alignment: Alignment.centerRight, child: timeBlock),
+          ],
+        ),
+      );
+    }
+
+    // Small screens: the centered/edge-aligned stack overlaps once the
+    // title, badge, and time block can't all fit on one row, so stack
+    // them vertically instead.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        titleRow,
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [liveBadge, timeBlock],
+        ),
+      ],
     );
   }
 }

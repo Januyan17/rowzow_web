@@ -23,81 +23,90 @@ class SessionCard extends StatelessWidget {
         ? AppColors.forServiceType(lines.first.serviceType)
         : AppColors.ps5;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            width: 5,
-            decoration: BoxDecoration(
-              color: accent,
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(20),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 340;
+        final padding = isCompact ? 14.0 : 18.0;
+        final avatarRadius = isCompact ? 17.0 : 20.0;
+        final nameFontSize = isCompact ? 18.0 : 22.0;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.cardBorder),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.12),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-            ),
+            ],
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 5,
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(20),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(padding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: accent.withValues(alpha: 0.18),
-                        child: Text(
-                          _initial(session.customerName),
-                          style: TextStyle(
-                            color: accent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: avatarRadius,
+                            backgroundColor: accent.withValues(alpha: 0.18),
+                            child: Text(
+                              _initial(session.customerName),
+                              style: TextStyle(
+                                color: accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isCompact ? 15 : 18,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          session.customerName ?? 'Guest',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.2,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              session.customerName ?? 'Guest',
+                              style: TextStyle(
+                                fontSize: nameFontSize,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.2,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        ],
                       ),
+                      const SizedBox(height: 14),
+                      for (final line in lines) ...[
+                        _LineSection(line: line, ps5Stations: ps5Stations),
+                        if (line != lines.last) const Divider(
+                          height: 20,
+                          color: AppColors.cardBorder,
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  for (final line in lines) ...[
-                    _LineSection(line: line, ps5Stations: ps5Stations),
-                    if (line != lines.last) const Divider(
-                      height: 20,
-                      color: AppColors.cardBorder,
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

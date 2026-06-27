@@ -41,84 +41,94 @@ class _PopularGamesBannerState extends State<PopularGamesBanner> {
     if (widget.games.isEmpty) return const SizedBox.shrink();
     final game = widget.games[_index];
 
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.live.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'POPULAR',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: AppColors.live,
-                letterSpacing: 0.6,
-              ),
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 420;
+        return Container(
+          height: isNarrow ? 56 : 64,
+          padding: EdgeInsets.symmetric(horizontal: isNarrow ? 12 : 18),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.cardBorder),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 450),
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.4),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isNarrow ? 7 : 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.live.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'POPULAR',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.live,
+                    letterSpacing: 0.6,
+                  ),
                 ),
               ),
-              child: Row(
-                key: ValueKey('${game.title}-$_index'),
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(game.icon, color: game.color, size: 22),
-                  const SizedBox(width: 10),
-                  Text(
-                    game.title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+              SizedBox(width: isNarrow ? 10 : 16),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 450),
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.4),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
+                  child: Row(
+                    key: ValueKey('${game.title}-$_index'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(game.icon, color: game.color, size: isNarrow ? 18 : 22),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          game.title,
+                          style: TextStyle(
+                            fontSize: isNarrow ? 15 : 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              if (widget.games.length > 1 && !isNarrow)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(widget.games.length, (i) {
+                    final active = i == _index;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: active ? 18 : 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: active ? game.color : Colors.white24,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    );
+                  }),
+                ),
+            ],
           ),
-          if (widget.games.length > 1)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(widget.games.length, (i) {
-                final active = i == _index;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: active ? 18 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: active ? game.color : Colors.white24,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                );
-              }),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

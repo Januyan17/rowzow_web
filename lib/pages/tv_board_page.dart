@@ -256,24 +256,27 @@ class _HeaderState extends State<_Header> {
       ),
     );
 
-    final titleRow = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        logo,
-        SizedBox(width: widget.compact ? 10 : 14),
-        Flexible(
-          child: Text(
+    // FittedBox scales the whole logo+title down to fit the available
+    // width instead of ellipsis-truncating long app names (e.g. the prod
+    // "Rowzow Gaming Center" name on small phones).
+    final titleRow = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          logo,
+          SizedBox(width: widget.compact ? 10 : 14),
+          Text(
             AppConfig.appName,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: widget.compact ? 20 : 26,
+              fontSize: widget.compact ? 22 : 26,
               fontWeight: FontWeight.w800,
               color: Colors.white,
               letterSpacing: 0.2,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
 
     final liveBadge = Container(

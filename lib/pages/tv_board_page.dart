@@ -13,8 +13,7 @@ import '../widgets/session_card.dart';
 import '../widgets/terms_footer.dart';
 
 class TvBoardPage extends StatefulWidget {
-  const TvBoardPage({super.key, TvBoardController? controller})
-    : _controllerOverride = controller;
+  const TvBoardPage({super.key, TvBoardController? controller}) : _controllerOverride = controller;
 
   /// Lets tests inject a fake controller instead of hitting the real
   /// Supabase client/realtime socket.
@@ -31,8 +30,7 @@ class _TvBoardPageState extends State<TvBoardPage> {
   void initState() {
     super.initState();
     _controller =
-        widget._controllerOverride ??
-        TvBoardController(TvRepository(Supabase.instance.client));
+        widget._controllerOverride ?? TvBoardController(TvRepository(Supabase.instance.client));
     _controller.addListener(_onUpdate);
     _controller.init();
   }
@@ -72,10 +70,7 @@ class _TvBoardPageState extends State<TvBoardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _Header(
-                      sessionCount: _controller.sessions.length,
-                      compact: width < 700,
-                    ),
+                    _Header(sessionCount: _controller.sessions.length, compact: width < 700),
                     SizedBox(height: sectionGap),
                     const PopularGamesBanner(),
                     SizedBox(height: bodyGap),
@@ -169,27 +164,17 @@ class _StatusMessage extends StatelessWidget {
                 ? const SizedBox(
                     width: 40,
                     height: 40,
-                    child: CircularProgressIndicator(
-                      color: AppColors.ps5,
-                      strokeWidth: 3,
-                    ),
+                    child: CircularProgressIndicator(color: AppColors.ps5, strokeWidth: 3),
                   )
                 : Icon(icon, size: 40, color: iconColor),
           ),
           const SizedBox(height: 20),
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: const TextStyle(color: Colors.white38, fontSize: 15),
-          ),
+          Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 15)),
         ],
       ),
     );
@@ -238,22 +223,11 @@ class _HeaderState extends State<_Header> {
     final logo = Container(
       padding: EdgeInsets.all(widget.compact ? 8 : 10),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.ps5, AppColors.vr],
-        ),
+        gradient: const LinearGradient(colors: [AppColors.ps5, AppColors.vr]),
         borderRadius: BorderRadius.circular(widget.compact ? 12 : 14),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.ps5.withValues(alpha: 0.4),
-            blurRadius: 16,
-          ),
-        ],
+        boxShadow: [BoxShadow(color: AppColors.ps5.withValues(alpha: 0.4), blurRadius: 16)],
       ),
-      child: Icon(
-        Icons.sports_esports,
-        color: Colors.white,
-        size: widget.compact ? 20 : 26,
-      ),
+      child: Icon(Icons.sports_esports, color: Colors.white, size: widget.compact ? 20 : 26),
     );
 
     // FittedBox scales the whole logo+title down to fit the available
@@ -284,9 +258,7 @@ class _HeaderState extends State<_Header> {
       decoration: BoxDecoration(
         color: AppColors.live.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.live.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.live.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -318,10 +290,7 @@ class _HeaderState extends State<_Header> {
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
-        Text(
-          date,
-          style: const TextStyle(fontSize: 12, color: Colors.white38),
-        ),
+        Text(date, style: const TextStyle(fontSize: 12, color: Colors.white38)),
       ],
     );
 
@@ -349,10 +318,7 @@ class _HeaderState extends State<_Header> {
       children: [
         titleRow,
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [liveBadge, timeBlock],
-        ),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [liveBadge, timeBlock]),
       ],
     );
   }

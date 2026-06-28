@@ -38,8 +38,9 @@ class _CountdownTextState extends State<CountdownText> {
   Widget build(BuildContext context) {
     final line = widget.line;
     final pausedSeconds = line.totalPausedSeconds ?? 0;
+    final referenceNow = line.endTime ?? _now;
     final rawElapsed =
-        _now.difference(line.startTime) - Duration(seconds: pausedSeconds);
+        referenceNow.difference(line.startTime) - Duration(seconds: pausedSeconds);
     final elapsed = rawElapsed.isNegative ? Duration.zero : rawElapsed;
 
     Duration? remaining;

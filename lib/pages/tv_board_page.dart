@@ -115,17 +115,24 @@ class _TvBoardPageState extends State<TvBoardPage> {
         final isMobile = constraints.maxWidth < 600;
         final columns = (constraints.maxWidth / 380).floor().clamp(1, 6);
         final spacing = isMobile ? 14.0 : 22.0;
-        return GridView.builder(
-          itemCount: _controller.sessions.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            mainAxisExtent: isMobile ? 270 : 250,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-          ),
-          itemBuilder: (context, index) => SessionCard(
-            session: _controller.sessions[index],
-            ps5Stations: _controller.ps5Stations,
+        // Cards grow taller as a session stacks more service lines, so a
+        // fixed-height grid cell overflows. Wrap lets each card size to its
+        // own content while still reflowing into columns responsively.
+        final cardWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        return SingleChildScrollView(
+          child: Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: [
+              for (final session in _controller.sessions)
+                SizedBox(
+                  width: cardWidth,
+                  child: SessionCard(
+                    session: session,
+                    ps5Stations: _controller.ps5Stations,
+                  ),
+                ),
+            ],
           ),
         );
       },

@@ -43,67 +43,70 @@ class SessionCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 5,
-                decoration: BoxDecoration(
-                  color: accent,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(20),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 5,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(20),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(padding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: avatarRadius,
-                            backgroundColor: accent.withValues(alpha: 0.18),
-                            child: Text(
-                              _initial(session.customerName),
-                              style: TextStyle(
-                                color: accent,
-                                fontWeight: FontWeight.bold,
-                                fontSize: isCompact ? 15 : 18,
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(padding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: avatarRadius,
+                              backgroundColor: accent.withValues(alpha: 0.18),
+                              child: Text(
+                                _initial(session.customerName),
+                                style: TextStyle(
+                                  color: accent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isCompact ? 15 : 18,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              session.customerName ?? 'Guest',
-                              style: TextStyle(
-                                fontSize: nameFontSize,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.2,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                session.customerName ?? 'Guest',
+                                style: TextStyle(
+                                  fontSize: nameFontSize,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      for (final line in lines) ...[
-                        _LineSection(line: line, ps5Stations: ps5Stations),
-                        if (line != lines.last) const Divider(
-                          height: 24,
-                          color: AppColors.cardBorder,
+                          ],
                         ),
+                        const SizedBox(height: 16),
+                        for (final line in lines) ...[
+                          _LineSection(line: line, ps5Stations: ps5Stations),
+                          if (line != lines.last)
+                            const Divider(
+                              height: 24,
+                              color: AppColors.cardBorder,
+                            ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -125,12 +128,13 @@ class _LineSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final stopped = line.endTime != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            _ServiceBadge(type: line.serviceType),
+            _ServiceBadge(type: line.serviceType, muted: stopped),
             const SizedBox(width: 8),
             Expanded(
               child: Wrap(
@@ -138,14 +142,17 @@ class _LineSection extends StatelessWidget {
                 runSpacing: 6,
                 children: [
                   ..._detailChips(),
-                  _chip(Icons.schedule_outlined, 'Started ${_formatStart(line.startTime)}'),
+                  _chip(
+                    Icons.schedule_outlined,
+                    'Started ${_formatStart(line.startTime)}',
+                  ),
                 ],
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        CountdownText(line: line),
+        if (stopped) _StoppedSummary(line: line) else CountdownText(line: line),
       ],
     );
   }
@@ -180,7 +187,10 @@ class _LineSection extends StatelessWidget {
         final hours = line.theatreHours;
         return [
           if (persons != null)
-            _chip(Icons.groups_outlined, '$persons person${persons == 1 ? '' : 's'}'),
+            _chip(
+              Icons.groups_outlined,
+              '$persons person${persons == 1 ? '' : 's'}',
+            ),
           if (hours != null) _chip(Icons.schedule, '${hours}h'),
         ];
       case ServiceType.vr:
@@ -193,7 +203,11 @@ class _LineSection extends StatelessWidget {
               Icons.sports_esports_outlined,
               '$controllers controller${controllers == 1 ? '' : 's'}',
             ),
-          if (games != null) _chip(Icons.videogame_asset_outlined, '$games game${games == 1 ? '' : 's'}'),
+          if (games != null)
+            _chip(
+              Icons.videogame_asset_outlined,
+              '$games game${games == 1 ? '' : 's'}',
+            ),
         ];
     }
   }
@@ -221,9 +235,10 @@ class _LineSection extends StatelessWidget {
 }
 
 class _ServiceBadge extends StatelessWidget {
-  const _ServiceBadge({required this.type});
+  const _ServiceBadge({required this.type, this.muted = false});
 
   final ServiceType type;
+  final bool muted;
 
   @override
   Widget build(BuildContext context) {
@@ -233,34 +248,89 @@ class _ServiceBadge extends StatelessWidget {
       ServiceType.simulator => (Icons.directions_car, 'SIM'),
       ServiceType.theatre => (Icons.theaters, 'THEATRE'),
     };
-    final color = AppColors.forServiceType(type);
+    final color = muted ? Colors.white24 : AppColors.forServiceType(type);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withValues(alpha: 0.7)],
-        ),
+        gradient: muted
+            ? null
+            : LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
+        color: muted ? Colors.white.withValues(alpha: 0.06) : null,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8),
-        ],
+        boxShadow: muted
+            ? null
+            : [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8)],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: Colors.white),
+          Icon(icon, size: 15, color: muted ? Colors.white54 : Colors.white),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: muted ? Colors.white54 : Colors.white,
               letterSpacing: 0.4,
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+/// Compact, clearly-labelled state for a service line that has already
+/// ended — deliberately small so a stopped line never competes visually
+/// with the live ELAPSED/REMAINING tiles of sessions that are still running.
+class _StoppedSummary extends StatelessWidget {
+  const _StoppedSummary({required this.line});
+
+  final TvSessionLine line;
+
+  @override
+  Widget build(BuildContext context) {
+    final pausedSeconds = line.totalPausedSeconds ?? 0;
+    final played =
+        line.endTime!.difference(line.startTime) -
+        Duration(seconds: pausedSeconds);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.stop_circle_outlined,
+            size: 14,
+            color: Colors.white38,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Stopped · played ${_format(played)}',
+            style: const TextStyle(
+              fontSize: 12.5,
+              color: Colors.white54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _format(Duration d) {
+    final clamped = d.isNegative ? Duration.zero : d;
+    final h = clamped.inHours;
+    final m = clamped.inMinutes.remainder(60);
+    final s = clamped.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}m';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
   }
 }

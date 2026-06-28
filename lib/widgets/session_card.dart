@@ -5,6 +5,7 @@ import '../models/tv_session.dart';
 import '../models/tv_session_line.dart';
 import '../theme/app_colors.dart';
 import 'countdown_text.dart';
+import 'session_activity_sheet.dart';
 
 class SessionCard extends StatelessWidget {
   const SessionCard({
@@ -90,6 +91,15 @@ class SessionCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            if (session.lines.length > 1)
+                              _ViewActivityButton(
+                                compact: isCompact,
+                                onTap: () => showSessionActivitySheet(
+                                  context,
+                                  session,
+                                  ps5Stations,
+                                ),
+                              ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -117,6 +127,42 @@ class SessionCard extends StatelessWidget {
     final trimmed = name?.trim();
     if (trimmed == null || trimmed.isEmpty) return '?';
     return trimmed[0].toUpperCase();
+  }
+}
+
+/// Entry point into the full per-line activity log. Collapses to an
+/// icon-only tap target on narrow/mobile cards so it never pushes the
+/// customer name off-screen.
+class _ViewActivityButton extends StatelessWidget {
+  const _ViewActivityButton({required this.compact, required this.onTap});
+
+  final bool compact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (compact) {
+      return IconButton(
+        onPressed: onTap,
+        icon: const Icon(Icons.history, size: 18, color: Colors.white60),
+        tooltip: 'View activity',
+        padding: const EdgeInsets.all(6),
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        visualDensity: VisualDensity.compact,
+      );
+    }
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.history, size: 16),
+      label: const Text('Activity'),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white70,
+        backgroundColor: Colors.white.withValues(alpha: 0.06),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    );
   }
 }
 

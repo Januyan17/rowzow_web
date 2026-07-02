@@ -241,14 +241,8 @@ class _LineSection extends StatelessWidget {
         ];
       case ServiceType.vr:
       case ServiceType.simulator:
-        final controllers = line.quantity;
         final games = num.tryParse(line.games ?? '');
         return [
-          if (controllers != null)
-            _chip(
-              Icons.sports_esports_outlined,
-              '$controllers controller${controllers == 1 ? '' : 's'}',
-            ),
           if (games != null)
             _chip(
               Icons.videogame_asset_outlined,

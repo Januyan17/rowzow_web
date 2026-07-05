@@ -16,11 +16,8 @@ class TvBoardController extends ChangeNotifier {
   bool loading = true;
   Object? error;
 
-  static const _pollInterval = Duration(seconds: 10);
-
   StreamSubscription<void>? _changesSub;
   Timer? _debounce;
-  Timer? _pollTimer;
   bool _refreshing = false;
 
   Future<void> init() async {
@@ -29,10 +26,6 @@ class TvBoardController extends ChangeNotifier {
       _debounce?.cancel();
       _debounce = Timer(const Duration(milliseconds: 400), _refresh);
     });
-    // Safety net: if a Realtime event ever gets missed (dropped socket,
-    // publication not enabled for a table, etc.) the board still
-    // self-corrects within one poll interval instead of staying stale.
-    _pollTimer = Timer.periodic(_pollInterval, (_) => _refresh());
   }
 
   Future<void> _refresh() async {
@@ -58,7 +51,6 @@ class TvBoardController extends ChangeNotifier {
   @override
   void dispose() {
     _debounce?.cancel();
-    _pollTimer?.cancel();
     _changesSub?.cancel();
     super.dispose();
   }

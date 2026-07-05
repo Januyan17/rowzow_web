@@ -11,6 +11,7 @@ import '../widgets/live_pulse_dot.dart';
 import '../widgets/popular_games_banner.dart';
 import '../widgets/session_card.dart';
 import '../widgets/terms_footer.dart';
+import '../widgets/upcoming_game_countdown.dart';
 
 class TvBoardPage extends StatefulWidget {
   const TvBoardPage({super.key, TvBoardController? controller}) : _controllerOverride = controller;
@@ -73,6 +74,8 @@ class _TvBoardPageState extends State<TvBoardPage> {
                     _Header(sessionCount: _controller.sessions.length, compact: width < 700),
                     SizedBox(height: sectionGap),
                     const PopularGamesBanner(),
+                    SizedBox(height: sectionGap),
+                    UpcomingGameCountdown(),
                     SizedBox(height: bodyGap),
                     Expanded(child: _buildBody()),
                     const TermsFooter(),

@@ -21,23 +21,29 @@ class TvBoardController extends ChangeNotifier {
   bool _refreshing = false;
 
   Future<void> init() async {
-    await _refresh();
+    // Station labels are static config (not session data) — fetch once
+    // up front rather than on every session refresh.
+    await Future.wait([_loadPs5Stations(), _refreshSessions()]);
     _changesSub = _repository.watchSessionChanges().listen((_) {
       _debounce?.cancel();
-      _debounce = Timer(const Duration(milliseconds: 400), _refresh);
+      _debounce = Timer(const Duration(milliseconds: 400), _refreshSessions);
     });
   }
 
-  Future<void> _refresh() async {
+  Future<void> _loadPs5Stations() async {
+    try {
+      ps5Stations = await _repository.fetchPs5Stations();
+    } catch (_) {
+      // Station labels are a display nicety; a failure here shouldn't
+      // block the board from showing live session data.
+    }
+  }
+
+  Future<void> _refreshSessions() async {
     if (_refreshing) return;
     _refreshing = true;
     try {
-      final results = await Future.wait([
-        _repository.fetchActiveSessions(),
-        _repository.fetchPs5Stations(),
-      ]);
-      sessions = results[0] as List<TvSession>;
-      ps5Stations = results[1] as List<Ps5Station>;
+      sessions = await _repository.fetchActiveSessions();
       error = null;
     } catch (e) {
       error = e;

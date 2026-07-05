@@ -8,38 +8,23 @@ import '../models/tv_session.dart';
 
 /// Reads the TV board's data from Supabase.
 ///
-/// SAFETY: every select below is an explicit, exhaustive column list.
-/// Never change these to `select('*')` and never add any amount/price/
-/// payment/phone column — there is no RLS on these tables, so this
-/// allow-list is the only thing keeping financial/contact data off the
-/// public lounge TV.
+/// SAFETY: active sessions are read through the `tv_active_sessions()`
+/// Postgres RPC, which allow-lists exactly the metadata keys this board
+/// needs. Never change this back to a raw `.from('sessions').select(...)`
+/// — there is no RLS on these tables, and `session_service_lines.metadata`
+/// contains price fields (e.g. `planned_price`) that must never reach the
+/// public lounge TV. The allow-list lives in the SQL function itself, not
+/// in this file.
 class TvRepository {
   TvRepository(this._client);
 
   final SupabaseClient _client;
 
-  static const _activeSessionsSelect = '''
-      id,
-      start_time,
-      end_time,
-      status,
-      customers ( name ),
-      session_service_lines (
-        id,
-        service_type,
-        start_time,
-        end_time,
-        quantity,
-        metadata
-      )
-  ''';
-
   Future<List<TvSession>> fetchActiveSessions() async {
-    final rows = await _client
-        .from('sessions')
-        .select(_activeSessionsSelect)
-        .eq('status', 'active');
-    return rows.map(TvSession.fromJson).toList();
+    final rows = await _client.rpc('tv_active_sessions') as List;
+    return rows
+        .map((row) => TvSession.fromJson((row as Map).cast<String, dynamic>()))
+        .toList();
   }
 
   Future<List<Ps5Station>> fetchPs5Stations() async {

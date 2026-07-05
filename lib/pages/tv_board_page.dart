@@ -232,14 +232,10 @@ class _HeaderState extends State<_Header> {
         '${_now.year}-${_now.month.toString().padLeft(2, '0')}-'
         '${_now.day.toString().padLeft(2, '0')}';
 
-    final logo = Container(
-      padding: EdgeInsets.all(widget.compact ? 8 : 10),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [AppColors.ps5, AppColors.vr]),
-        borderRadius: BorderRadius.circular(widget.compact ? 12 : 14),
-        boxShadow: [BoxShadow(color: AppColors.ps5.withValues(alpha: 0.4), blurRadius: 16)],
-      ),
-      child: Icon(Icons.sports_esports, color: Colors.white, size: widget.compact ? 20 : 26),
+    final logo = Image.asset(
+      'assets/logo.png',
+      height: widget.compact ? 44 : 54,
+      fit: BoxFit.contain,
     );
 
     // FittedBox scales the whole logo+title down to fit the available
@@ -251,7 +247,7 @@ class _HeaderState extends State<_Header> {
         mainAxisSize: MainAxisSize.min,
         children: [
           logo,
-          SizedBox(width: widget.compact ? 10 : 14),
+          SizedBox(width: widget.compact ? 4 : 6),
           Text(
             AppConfig.appName,
             style: TextStyle(

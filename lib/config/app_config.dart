@@ -25,6 +25,16 @@ class AppConfig {
     defaultValue: true,
   );
 
+  /// Whether the Supabase credentials were actually supplied at build time.
+  ///
+  /// `Supabase.initialize` accepts an empty URL without complaining, and the
+  /// client then resolves requests against a relative path on whatever host
+  /// serves the app — which surfaces on the board as a misleading "unable to
+  /// load live sessions". Check this first so a missing `--dart-define`
+  /// reports itself as the config problem it is.
+  static bool get hasSupabaseConfig =>
+      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+
   static AppFlavor get flavor {
     switch (_flavorName) {
       case 'prod':

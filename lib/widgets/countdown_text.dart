@@ -1,64 +1,54 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-import '../models/tv_session_line.dart';
+import '../models/tv_active_session.dart';
 import '../theme/app_colors.dart';
 
-/// Ticks once a second to repaint elapsed/remaining text for a single
-/// session line. Purely local — never triggers a network refetch.
-class CountdownText extends StatefulWidget {
-  const CountdownText({super.key, required this.line});
+/// Elapsed / remaining readout for one active session.
+///
+/// Stateless by design: [now] is driven by the board's single [SecondTicker]
+/// and every figure is derived on the client from `start_time`,
+/// `planned_duration_minutes`, `total_paused_seconds` and `paused_at`. The
+/// server is never asked how much time is left.
+class CountdownText extends StatelessWidget {
+  const CountdownText({
+    super.key,
+    required this.session,
+    required this.now,
+    this.dimmed = false,
+  });
 
-  final TvSessionLine line;
+  final TvActiveSession session;
+  final DateTime now;
 
-  @override
-  State<CountdownText> createState() => _CountdownTextState();
-}
-
-class _CountdownTextState extends State<CountdownText> {
-  late final Timer _timer;
-  DateTime _now = DateTime.now();
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _now = DateTime.now());
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
+  /// Occupied tiles recede so the free stations read first, so the timers
+  /// are toned down too. Overtime is the deliberate exception — it stays
+  /// loud, because it is the one thing staff must notice from across the
+  /// room.
+  final bool dimmed;
 
   @override
   Widget build(BuildContext context) {
-    final line = widget.line;
-    final pausedSeconds = line.totalPausedSeconds ?? 0;
-    final referenceNow = line.endTime ?? _now;
-    final rawElapsed =
-        referenceNow.difference(line.startTime) - Duration(seconds: pausedSeconds);
-    final elapsed = rawElapsed.isNegative ? Duration.zero : rawElapsed;
-
-    Duration? remaining;
-    int? allowedSeconds;
-    if (line.plannedDurationMinutes != null) {
-      allowedSeconds =
-          (line.plannedDurationMinutes! + (line.gracePeriodMinutes ?? 0)) * 60;
-      remaining = Duration(seconds: allowedSeconds) - elapsed;
-    }
+    final elapsed = session.elapsedAt(now);
+    final remaining = session.remainingAt(now);
+    final progress = session.progressAt(now);
     final isOvertime = remaining != null && remaining.isNegative;
+    final paused = session.isPaused;
 
-    final progress = allowedSeconds != null && allowedSeconds > 0
-        ? (elapsed.inSeconds / allowedSeconds).clamp(0.0, 1.0)
-        : null;
-    final urgencyColor = _urgencyColor(progress, isOvertime);
+    // A paused session's figures are frozen, so drain the urgency colours
+    // too — a red bar that isn't moving reads as a fault on a wall screen.
+    // The time left is the point of the tile, so it keeps full urgency
+    // colour even while the surrounding card is receded. ELAPSED is the
+    // quieter half — it is history, not something anyone has to act on.
+    final urgency = paused
+        ? Colors.white54
+        : _urgencyColor(progress, isOvertime);
+    final elapsedColor = paused
+        ? Colors.white60
+        : (dimmed ? Colors.white70 : Colors.white);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
@@ -67,14 +57,14 @@ class _CountdownTextState extends State<CountdownText> {
                 icon: Icons.timer_outlined,
                 label: 'ELAPSED',
                 value: _format(elapsed),
-                valueColor: Colors.white,
+                valueColor: elapsedColor,
                 accentColor: Colors.white,
               ),
             ),
             if (remaining != null) ...[
               const SizedBox(width: 10),
               Expanded(
-                child: isOvertime
+                child: isOvertime && !paused
                     ? _StatTile(
                         icon: Icons.warning_rounded,
                         label: 'OVERTIME',
@@ -86,10 +76,26 @@ class _CountdownTextState extends State<CountdownText> {
                     : _StatTile(
                         icon: Icons.hourglass_bottom,
                         label: 'REMAINING',
-                        value: _format(remaining),
-                        valueColor: urgencyColor,
-                        accentColor: urgencyColor,
+                        value: isOvertime
+                            ? '+${_format(remaining.abs())}'
+                            : _format(remaining),
+                        valueColor: urgency,
+                        accentColor: urgency,
+                        // Tinted and outlined so the live timer reads as the
+                        // active element next to the muted ELAPSED tile.
+                        highlighted: !paused,
                       ),
+              ),
+            ] else ...[
+              const SizedBox(width: 10),
+              const Expanded(
+                child: _StatTile(
+                  icon: Icons.all_inclusive,
+                  label: 'NO LIMIT',
+                  value: 'Open',
+                  valueColor: Colors.white70,
+                  accentColor: Colors.white,
+                ),
               ),
             ],
           ],
@@ -104,7 +110,8 @@ class _CountdownTextState extends State<CountdownText> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.white.withValues(alpha: 0.08),
-                valueColor: AlwaysStoppedAnimation(urgencyColor),
+                valueColor: AlwaysStoppedAnimation(urgency),
+                minHeight: 6,
               ),
             ),
           ),
@@ -113,27 +120,29 @@ class _CountdownTextState extends State<CountdownText> {
     );
   }
 
+  /// Green with time to spare, amber past 60%, orange past 85%, red once it
+  /// has actually run over.
   Color _urgencyColor(double? progress, bool isOvertime) {
     if (isOvertime) return AppColors.overtime;
     if (progress == null) return AppColors.live;
-    if (progress >= 0.85) return AppColors.overtime;
+    if (progress >= 0.85) return AppColors.warning;
     if (progress >= 0.6) return AppColors.theatre;
     return AppColors.live;
   }
 
   static String _format(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final clamped = d.isNegative ? Duration.zero : d;
+    final h = clamped.inHours;
+    final m = clamped.inMinutes.remainder(60);
+    final s = clamped.inSeconds.remainder(60).toString().padLeft(2, '0');
     if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}m ${s}s';
     if (m > 0) return '${m}m ${s}s';
     return '${s}s';
   }
 }
 
-/// A labelled time readout (elapsed/remaining/overtime), styled as a small
-/// filled tile so the stats read as distinct "cards" instead of bare text
-/// floating in empty space.
+/// A labelled time readout, styled as a small filled tile so the stats read
+/// as distinct cards rather than bare text floating in empty space.
 class _StatTile extends StatelessWidget {
   const _StatTile({
     required this.icon,
@@ -170,13 +179,17 @@ class _StatTile extends StatelessWidget {
             children: [
               Icon(icon, size: 12, color: Colors.white54),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white54,
-                  letterSpacing: 0.5,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white54,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ],

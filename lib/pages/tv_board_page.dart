@@ -5,11 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../data/tv_repository.dart';
+import '../models/service_type.dart';
 import '../state/tv_board_controller.dart';
 import '../theme/app_colors.dart';
 import '../widgets/live_pulse_dot.dart';
 import '../widgets/popular_games_banner.dart';
-import '../widgets/session_card.dart';
+import '../widgets/second_ticker.dart';
+import '../widgets/station_tile.dart';
 import '../widgets/terms_footer.dart';
 import '../widgets/upcoming_game_countdown.dart';
 
@@ -106,39 +108,200 @@ class _TvBoardPageState extends State<TvBoardPage> {
         iconColor: AppColors.overtime,
       );
     }
-    if (_controller.sessions.isEmpty) {
+    // No sessions is a normal "everything is free" state, not an empty
+    // state — the grid below still draws every configured station. The
+    // only genuinely empty case is a venue with no layout configured yet.
+    if (_controller.layout.isEmpty && _controller.sessions.isEmpty) {
       return const _StatusMessage(
         icon: Icons.movie_filter_outlined,
-        title: 'No active sessions',
-        subtitle: 'New sessions will appear here automatically',
+        title: 'No stations configured',
+        subtitle: 'Stations will appear here once the layout is set up',
       );
     }
+    return SecondTicker(
+      builder: (context, now) => _StationBoard(
+        controller: _controller,
+        now: now,
+      ),
+    );
+  }
+}
+
+/// The board proper: every configured station, busy or free, plus any
+/// active session that does not map onto a numbered station.
+class _StationBoard extends StatelessWidget {
+  const _StationBoard({required this.controller, required this.now});
+
+  final TvBoardController controller;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final layout = controller.layout;
+    final others = controller.otherServices;
+
+    final vrSessions = others
+        .where((s) => s.serviceType == ServiceType.vr)
+        .toList();
+    final simSessions = others
+        .where((s) => s.serviceType == ServiceType.simulator)
+        .toList();
+    final theatreSessions = others
+        .where((s) => s.serviceType == ServiceType.theatre)
+        .toList();
+
+    final ps5Tiles = <Widget>[
+      for (var i = 0; i < layout.ps5Stations.length; i++)
+        Ps5StationTile(
+          station: layout.ps5Stations[i],
+          session: controller.ps5ByStation[i],
+          now: now,
+        ),
+      // A PS5 session the layout can't place still has to show up.
+      for (final session in controller.unplacedPs5)
+        ServiceSessionTile(session: session, now: now),
+    ];
+
+    final otherTiles = <Widget>[
+      for (final session in vrSessions)
+        ServiceSessionTile(session: session, now: now, title: 'VR'),
+      for (var i = 0; i < _free(layout.vrUnits, vrSessions.length); i++)
+        const FreeServiceTile(type: ServiceType.vr, title: 'VR'),
+      for (final session in simSessions)
+        ServiceSessionTile(session: session, now: now, title: 'Simulator'),
+      for (var i = 0; i < _free(layout.simulatorUnits, simSessions.length); i++)
+        const FreeServiceTile(
+          type: ServiceType.simulator,
+          title: 'Simulator',
+        ),
+      // The theatre is a single room, so it gets exactly one tile: the
+      // running session while it is in use, a plain free tile when it is
+      // not. Seat counts and headcount are deliberately not shown.
+      for (final session in theatreSessions)
+        ServiceSessionTile(session: session, now: now, title: 'Theatre'),
+      if (theatreSessions.isEmpty && layout.theatreSeats > 0)
+        const FreeServiceTile(type: ServiceType.theatre, title: 'Theatre'),
+    ];
+
+    final allFree = controller.sessions.isEmpty;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 600;
         final columns = (constraints.maxWidth / 380).floor().clamp(1, 6);
         final spacing = isMobile ? 14.0 : 22.0;
-        // Cards grow taller as a session stacks more service lines, so a
-        // fixed-height grid cell overflows. Wrap lets each card size to its
-        // own content while still reflowing into columns responsively.
-        final cardWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        final tileWidth =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        Widget grid(List<Widget> tiles) => Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final tile in tiles) SizedBox(width: tileWidth, child: tile),
+          ],
+        );
+
         return SingleChildScrollView(
-          child: Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final session in _controller.sessions)
-                SizedBox(
-                  width: cardWidth,
-                  child: SessionCard(
-                    session: session,
-                    ps5Stations: _controller.ps5Stations,
-                  ),
-                ),
+              if (allFree) ...[
+                const _AllFreeBanner(),
+                SizedBox(height: spacing),
+              ],
+              if (ps5Tiles.isNotEmpty) ...[
+                const _SectionLabel('PS5 Stations'),
+                const SizedBox(height: 10),
+                grid(ps5Tiles),
+              ],
+              if (ps5Tiles.isNotEmpty && otherTiles.isNotEmpty)
+                SizedBox(height: spacing),
+              if (otherTiles.isNotEmpty) ...[
+                const _SectionLabel('VR · Simulator · Theatre'),
+                const SizedBox(height: 10),
+                grid(otherTiles),
+              ],
             ],
           ),
         );
       },
+    );
+  }
+
+  static int _free(int total, int busy) {
+    final free = total - busy;
+    return free < 0 ? 0 : free;
+  }
+
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: Colors.white38,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+}
+
+/// Shown when nothing at all is running, so a passer-by gets the answer
+/// without reading every tile.
+class _AllFreeBanner extends StatelessWidget {
+  const _AllFreeBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.live.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.live.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle_outline,
+            color: AppColors.live,
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'All stations free',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  'Nothing running right now — walk up and play',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

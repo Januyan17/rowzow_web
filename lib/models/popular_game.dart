@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import 'tv_session_line.dart';
+import 'service_type.dart';
 
 class PopularGame {
   const PopularGame({required this.title, required this.icon, required this.serviceType});

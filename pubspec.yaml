@@ -38,6 +38,9 @@ dependencies:
   # Supabase client used to read session time/details for display.
   supabase_flutter: ^2.6.0
 
+  # Opens the "Book Now" link in a new browser tab.
+  url_launcher: ^6.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

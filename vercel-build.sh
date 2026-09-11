@@ -11,4 +11,5 @@ flutter build web --release \
   --dart-define=APP_NAME="${APP_NAME:-Rowzow Gaming Center}" \
   --dart-define=SUPABASE_URL="${SUPABASE_URL:?SUPABASE_URL env var is required}" \
   --dart-define=SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY env var is required}" \
-  --dart-define=APP_DEBUG_LOG="${APP_DEBUG_LOG:-false}"
+  --dart-define=APP_DEBUG_LOG="${APP_DEBUG_LOG:-false}" \
+  --dart-define=BOOKING_URL="${BOOKING_URL:-https://www.rowzow.com}"

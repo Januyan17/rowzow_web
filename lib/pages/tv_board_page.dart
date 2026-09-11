@@ -8,6 +8,7 @@ import '../data/tv_repository.dart';
 import '../models/service_type.dart';
 import '../state/tv_board_controller.dart';
 import '../theme/app_colors.dart';
+import '../widgets/book_now_button.dart';
 import '../widgets/live_pulse_dot.dart';
 import '../widgets/popular_games_banner.dart';
 import '../widgets/second_ticker.dart';
@@ -73,7 +74,7 @@ class _TvBoardPageState extends State<TvBoardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _Header(sessionCount: _controller.sessions.length, compact: width < 700),
+                    _Header(sessionCount: _controller.sessions.length, compact: width < 900),
                     SizedBox(height: sectionGap),
                     const PopularGamesBanner(),
                     SizedBox(height: sectionGap),
@@ -474,7 +475,17 @@ class _HeaderState extends State<_Header> {
             // Centered logo + title, regardless of how wide the left/right
             // content below ends up being.
             titleRow,
-            Align(alignment: Alignment.centerLeft, child: liveBadge),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  liveBadge,
+                  const SizedBox(width: 12),
+                  const BookNowButton(),
+                ],
+              ),
+            ),
             Align(alignment: Alignment.centerRight, child: timeBlock),
           ],
         ),
@@ -490,6 +501,8 @@ class _HeaderState extends State<_Header> {
         titleRow,
         const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [liveBadge, timeBlock]),
+        const SizedBox(height: 10),
+        const BookNowButton(expand: true),
       ],
     );
   }

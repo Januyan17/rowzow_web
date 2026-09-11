@@ -25,6 +25,13 @@ class AppConfig {
     defaultValue: true,
   );
 
+  /// Where the "Book Now" button sends people. Overridable per flavor so a
+  /// dev/QA build can point at a staging booking site.
+  static const String bookingUrl = String.fromEnvironment(
+    'BOOKING_URL',
+    defaultValue: 'https://www.rowzow.com',
+  );
+
   /// Whether the Supabase credentials were actually supplied at build time.
   ///
   /// `Supabase.initialize` accepts an empty URL without complaining, and the

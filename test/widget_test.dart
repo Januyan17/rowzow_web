@@ -10,6 +10,7 @@ import 'package:rowzow_web/models/tv_active_session.dart';
 import 'package:rowzow_web/pages/tv_board_page.dart';
 import 'package:rowzow_web/state/tv_board_controller.dart';
 import 'package:rowzow_web/theme/app_colors.dart';
+import 'package:rowzow_web/widgets/book_now_button.dart';
 
 /// Stands in for [TvRepository] so the test never touches the real Supabase
 /// client.
@@ -342,6 +343,55 @@ void main() {
     expect(remaining.style?.color, AppColors.live);
 
     await _teardown(tester);
+  });
+
+  testWidgets('the board offers a Book Now button on wide and narrow layouts', (
+    tester,
+  ) async {
+    // Wide: the button sits in the single-row header alongside the badge.
+    tester.view.physicalSize = const Size(1600, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await _pumpBoard(
+      tester,
+      TvBoardController(_FakeTvRepository(layout: _layout)),
+    );
+    expect(find.byType(BookNowButton), findsOneWidget);
+    expect(find.text('Book Now'), findsOneWidget);
+    expect(tester.widget<BookNowButton>(find.byType(BookNowButton)).expand, isFalse);
+
+    // Narrow: the header stacks and the button spans the full width.
+    tester.view.physicalSize = const Size(420, 900);
+    await tester.pumpWidget(const SizedBox());
+    await _pumpBoard(
+      tester,
+      TvBoardController(_FakeTvRepository(layout: _layout)),
+    );
+    expect(find.text('Book Now'), findsOneWidget);
+    expect(tester.widget<BookNowButton>(find.byType(BookNowButton)).expand, isTrue);
+
+    await _teardown(tester);
+  });
+
+  testWidgets('tapping Book Now triggers the booking navigation', (
+    tester,
+  ) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: BookNowButton(onPressed: () => taps++)),
+      ),
+    );
+
+    await tester.tap(find.text('Book Now'));
+    await tester.pump();
+
+    expect(taps, 1);
+    // The board must keep running behind the booking site, so the link is
+    // an absolute URL opened elsewhere rather than an in-app route.
+    expect(Uri.parse(AppConfig.bookingUrl).hasScheme, isTrue);
+    expect(Uri.parse(AppConfig.bookingUrl).host, isNotEmpty);
   });
 
   testWidgets('an open-ended session shows no countdown', (tester) async {

@@ -35,6 +35,19 @@ class _FakeTvRepository implements TvRepository {
   Stream<void> watchBoardChanges() => changes;
 }
 
+/// Counts session fetches so a test can tell a refetch happened.
+class _CountingTvRepository extends _FakeTvRepository {
+  _CountingTvRepository({super.layout});
+
+  int fetches = 0;
+
+  @override
+  Future<List<TvActiveSession>> fetchActiveSessions() async {
+    fetches++;
+    return super.fetchActiveSessions();
+  }
+}
+
 const _layout = ResourceLayout(
   ps5Stations: [
     Ps5Station(label: 'Alpha', maxControllers: 4),
@@ -69,7 +82,8 @@ void main() {
     );
 
     expect(find.text(AppConfig.appName), findsOneWidget);
-    expect(find.text('All stations free'), findsOneWidget);
+    // No summary banner — each idle tile carries its own FREE badge.
+    expect(find.text('All stations free'), findsNothing);
     // Idle stations are rendered, not hidden.
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
@@ -410,6 +424,30 @@ void main() {
     expect(find.text('Open'), findsOneWidget);
     expect(find.text('NO LIMIT'), findsOneWidget);
     expect(find.text('REMAINING'), findsNothing);
+
+    await _teardown(tester);
+  });
+
+  testWidgets('pulling the board down refetches sessions', (tester) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final repo = _CountingTvRepository(layout: _layout);
+    await _pumpBoard(tester, TvBoardController(repo));
+    expect(repo.fetches, 1);
+
+    await tester.fling(
+      find.byType(SingleChildScrollView).first,
+      const Offset(0, 400),
+      1000,
+    );
+    // Let the indicator arm, run onRefresh, then settle back.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(repo.fetches, 2);
 
     await _teardown(tester);
   });

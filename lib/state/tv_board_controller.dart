@@ -53,6 +53,10 @@ class TvBoardController extends ChangeNotifier {
     });
   }
 
+  /// Manual re-read, e.g. from pull-to-refresh. Shares [_refresh]'s guard,
+  /// so a pull during a realtime-triggered fetch does not double up.
+  Future<void> refresh() => _refresh();
+
   Future<void> _refresh() async {
     if (_refreshing || _disposed) return;
     _refreshing = true;

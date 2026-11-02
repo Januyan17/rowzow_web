@@ -40,7 +40,17 @@ class RowzowApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0A0E1A),
+        scaffoldBackgroundColor: AppColors.backgroundBase,
+        tooltipTheme: TooltipThemeData(
+          decoration: ShapeDecoration(
+            color: AppColors.cardBackground,
+            shape: RoundedRectangleBorder(
+              side: BorderSide(color: AppColors.auroraCyan.withValues(alpha: 0.5)),
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
+          textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
       ),
       home: missingConfig ? const ConfigErrorPage() : const TvBoardPage(),
     );

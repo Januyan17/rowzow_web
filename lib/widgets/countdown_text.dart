@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/tv_active_session.dart';
 import '../theme/app_colors.dart';
+import 'glass_panel.dart';
 
 /// Elapsed / remaining readout for one active session.
 ///
@@ -102,19 +103,7 @@ class CountdownText extends StatelessWidget {
         ),
         if (progress != null) ...[
           const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: SizedBox(
-              height: 6,
-              width: double.infinity,
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.white.withValues(alpha: 0.08),
-                valueColor: AlwaysStoppedAnimation(urgency),
-                minHeight: 6,
-              ),
-            ),
-          ),
+          _HealthBar(value: progress, color: urgency, glow: !paused),
         ],
       ],
     );
@@ -141,6 +130,44 @@ class CountdownText extends StatelessWidget {
   }
 }
 
+/// Session progress as a slim rounded track with a glowing gradient fill
+/// and a bright leading edge.
+class _HealthBar extends StatelessWidget {
+  const _HealthBar({required this.value, required this.color, required this.glow});
+
+  final double value;
+  final Color color;
+  final bool glow;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = value.clamp(0.0, 1.0);
+    return Container(
+      height: 6,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      alignment: Alignment.centerLeft,
+      child: FractionallySizedBox(
+        widthFactor: v,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: LinearGradient(
+              colors: [color.withValues(alpha: 0.35), color],
+            ),
+            boxShadow: [
+              if (glow) BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A labelled time readout, styled as a small filled tile so the stats read
 /// as distinct cards rather than bare text floating in empty space.
 class _StatTile extends StatelessWidget {
@@ -164,12 +191,21 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: highlighted ? 0.14 : 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: highlighted
-            ? Border.all(color: accentColor.withValues(alpha: 0.5))
-            : null,
+      decoration: ShapeDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accentColor.withValues(alpha: highlighted ? 0.18 : 0.06),
+            accentColor.withValues(alpha: highlighted ? 0.06 : 0.02),
+          ],
+        ),
+        shape: panelShape(
+          14,
+          side: BorderSide(
+            color: accentColor.withValues(alpha: highlighted ? 0.35 : 0.06),
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +224,7 @@ class _StatTile extends StatelessWidget {
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
                     color: Colors.white54,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1.0,
                   ),
                 ),
               ),
@@ -204,6 +240,7 @@ class _StatTile extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: valueColor,
               fontFeatures: const [FontFeature.tabularFigures()],
+              shadows: highlighted ? softGlow(valueColor, strength: 0.5) : null,
             ),
           ),
         ],

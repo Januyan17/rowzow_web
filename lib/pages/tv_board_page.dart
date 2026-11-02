@@ -64,7 +64,11 @@ class _TvBoardPageState extends State<TvBoardPage> {
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
                 final isMobile = width < 600;
-                final arenaFixed = width >= 900 && constraints.maxHeight >= 760;
+                final arenaFixed = width >= 900 && constraints.maxHeight >= 900;
+                // Phones and short screens (landscape phones, small
+                // laptops) scroll the whole page as one, so the header and
+                // banner scroll away instead of crowding out the stations.
+                final scrollAll = isMobile || constraints.maxHeight < 600;
                 final isTablet = width >= 600 && width < 1024;
                 final horizontalPadding = isMobile
                     ? 14.0
@@ -75,13 +79,36 @@ class _TvBoardPageState extends State<TvBoardPage> {
                     : (isTablet ? 22.0 : 28.0);
                 final sectionGap = isMobile ? 12.0 : (isTablet ? 16.0 : 18.0);
                 final bodyGap = isMobile ? 14.0 : (isTablet ? 18.0 : 22.0);
+                final padding = EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  topPadding,
+                  horizontalPadding,
+                  bottomPadding,
+                );
+                if (scrollAll) {
+                  return _pullToRefresh(
+                    SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: padding,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _Header(
+                            sessionCount: _controller.sessions.length,
+                            compact: width < 900,
+                          ),
+                          SizedBox(height: sectionGap),
+                          UpcomingGameCountdown(),
+                          SizedBox(height: bodyGap),
+                          _buildInlineBody(),
+                          const TermsFooter(),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 return Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    topPadding,
-                    horizontalPadding,
-                    bottomPadding,
-                  ),
+                  padding: padding,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -159,6 +186,49 @@ class _TvBoardPageState extends State<TvBoardPage> {
     );
   }
 
+  /// The board for the whole-page scroll mode: the same states as
+  /// [_buildBody], laid out inline instead of filling a fixed area.
+  Widget _buildInlineBody() {
+    Widget message(_StatusMessage m) => SizedBox(height: 260, child: m);
+    if (_controller.loading) {
+      return message(
+        const _StatusMessage(
+          icon: Icons.sports_esports_outlined,
+          title: 'Loading the board…',
+          subtitle: 'Fetching live sessions from Rowzow',
+          showSpinner: true,
+        ),
+      );
+    }
+    if (_controller.error != null) {
+      return message(
+        const _StatusMessage(
+          icon: Icons.wifi_off_rounded,
+          title: 'Unable to load live sessions',
+          subtitle: 'Reconnecting automatically…',
+          iconColor: AppColors.overtime,
+        ),
+      );
+    }
+    if (_controller.layout.isEmpty && _controller.sessions.isEmpty) {
+      return message(
+        const _StatusMessage(
+          icon: Icons.movie_filter_outlined,
+          title: 'No stations configured',
+          subtitle: 'Stations will appear here once the layout is set up',
+        ),
+      );
+    }
+    return SecondTicker(
+      builder: (context, now) => _StationBoard(
+        controller: _controller,
+        now: now,
+        showArena: true,
+        scrollable: false,
+      ),
+    );
+  }
+
   /// Pull down on the board to re-read sessions now instead of waiting for
   /// the next realtime ping. Touch-driven, so in practice a phone/tablet
   /// gesture; a TV or desktop mouse never triggers it.
@@ -196,6 +266,7 @@ class _StationBoard extends StatelessWidget {
     required this.controller,
     required this.now,
     required this.showArena,
+    this.scrollable = true,
   });
 
   final TvBoardController controller;
@@ -203,6 +274,9 @@ class _StationBoard extends StatelessWidget {
 
   /// Append the squad battle after the last section (small screens).
   final bool showArena;
+
+  /// False when the whole page already scrolls (phones, short screens).
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
@@ -265,39 +339,41 @@ class _StationBoard extends StatelessWidget {
           ],
         );
 
+        final content = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (ps5Tiles.isNotEmpty) ...[
+              const _SectionLabel(
+                'PS5 Stations',
+                icon: Icons.sports_esports,
+                color: AppColors.ps5,
+              ),
+              const SizedBox(height: 10),
+              grid(ps5Tiles),
+            ],
+            if (ps5Tiles.isNotEmpty && otherTiles.isNotEmpty)
+              SizedBox(height: spacing),
+            if (otherTiles.isNotEmpty) ...[
+              const _SectionLabel(
+                'VR · Simulator · Theatre',
+                icon: Icons.vrpano,
+                color: AppColors.vr,
+              ),
+              const SizedBox(height: 10),
+              grid(otherTiles),
+            ],
+            if (showArena) ...[
+              SizedBox(height: spacing),
+              SquadBattle(height: isMobile ? 96 : 110),
+            ],
+          ],
+        );
+        if (!scrollable) return content;
         return SingleChildScrollView(
           // Scrollable even when every tile fits, so pull-to-refresh
           // still works on a short board.
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (ps5Tiles.isNotEmpty) ...[
-                const _SectionLabel(
-                  'PS5 Stations',
-                  icon: Icons.sports_esports,
-                  color: AppColors.ps5,
-                ),
-                const SizedBox(height: 10),
-                grid(ps5Tiles),
-              ],
-              if (ps5Tiles.isNotEmpty && otherTiles.isNotEmpty)
-                SizedBox(height: spacing),
-              if (otherTiles.isNotEmpty) ...[
-                const _SectionLabel(
-                  'VR · Simulator · Theatre',
-                  icon: Icons.vrpano,
-                  color: AppColors.vr,
-                ),
-                const SizedBox(height: 10),
-                grid(otherTiles),
-              ],
-              if (showArena) ...[
-                SizedBox(height: spacing),
-                SquadBattle(height: isMobile ? 96 : 110),
-              ],
-            ],
-          ),
+          child: content,
         );
       },
     );

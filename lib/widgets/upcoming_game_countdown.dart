@@ -12,7 +12,7 @@ class UpcomingGameCountdown extends StatefulWidget {
     this.title = 'Grand Theft Auto VI',
     this.icon = Icons.local_police,
     DateTime? releaseDate,
-  }) : releaseDate = releaseDate ?? DateTime(2026, 11, 12);
+  }) : releaseDate = releaseDate ?? DateTime(2026, 11, 18);
 
   final String title;
   final IconData icon;
